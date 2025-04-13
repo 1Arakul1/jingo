@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+  <div class="container my-5">
+    <h1 class="text-center mb-4">{{ title }}</h1>
+
+    <div class="card mx-auto" style="width: 18rem;">
+      {% if dog.image %}
+        <img src="{{ dog.image.url }}" class="card-img-top" alt="{{ dog.name }}">
+      {% else %}
+        <img src="{{ dog.image.url }}" class="card-img-top" alt="Изображение не доступно">
+      {% endif %}
+      <div class="card-body">
+        <h5 class="card-title text-primary">{{ dog.name }}</h5>
+        <p class="card-text"><strong>Порода:</strong> {{ dog.breed.name|default:"Не указана" }}</p>
+        <p class="card-text"><strong>Возраст:</strong> {{ dog.age }} лет</p>
+        {% if dog.birth_date %}
+          <p class="card-text"><strong>Дата рождения:</strong> {{ dog.birth_date|date:"d.m.Y" }}</p>
+        {% endif %}
+
+        {% if dog.description %}
+          <p class="card-text"><strong>Описание:</strong> {{ dog.description }}</p>
+        {% endif %}
+
+        {% if dog.owner %}
+          <p class="card-text"><strong>Владелец:</strong> {{ dog.owner.username }}</p>
+        {% else %}
+          <p class="card-text"><strong>Владелец:</strong> Не указан</p>
+        {% endif %}
+
+        {% if user.is_authenticated and user == dog.owner %}
+          <div class="d-flex justify-content-between align-items-center">
+            <a href="{% url 'dogs:dog_update' pk=dog.pk %}" class="btn btn-primary">Редактировать</a>
+            
+          </div>
+        {% endif %}
+
+        <a href="{% url 'dogs:dogs_list' %}" class="btn btn-secondary mt-3">К списку собак</a>
+      </div>
+    </div>
+  </div>
+{% endblock %}

@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+    <h1 class="text-center mb-4">Список всех собак</h1>
+    <p class="text-center">Здесь вы можете найти информацию о собаках разных пород.</p>
+
+    <div class="container">
+        <div class="row">
+            {% for dog in dogs %}
+                <div class="col-md-4 mb-4">
+                    <div class="card">
+                        {% if dog.image %}
+                            <img src="{{ dog.image.url }}" alt="{{ dog.name }}" class="card-img-top" style="max-height: 150px;">
+                        {% else %}
+                            <img src="{% static 'images/default_dog.jpg' %}" alt="Default Dog" class="card-img-top" style="max-height: 150px;">
+                        {% endif %}
+                        <div class="card-body">
+                            <h5 class="card-title mb-2">{{ dog.name }}</h5>
+                            <p class="card-text mb-2"><small>Порода: {{ dog.breed.name }}</small></p>
+                            <p class="card-text mb-2"><small>Возраст: {{ dog.age }} лет</small></p>
+                            <p class="card-text mb-2">{{ dog.description }}</p>
+                            <a href="{% url 'dogs:dog_read' dog.pk %}" class="btn btn-primary">Подробнее</a>
+                            {% if user.is_authenticated %}
+                                {% if dog.owner == request.user %}
+                                    <p class="text-success">В вашем профиле</p>
+                                {% elif dog.owner %}
+                                    <p class="text-info">Собака принадлежит пользователю: {{ dog.owner.username }}</p>
+                                {% else %}
+                                    <form method="post" action="{% url 'dogs:add_to_profile' dog_id=dog.pk %}">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-success">Добавить в профиль</button>
+                                    </form>
+                                {% endif %}
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+
+        <!-- Пагинация -->
+        {% if dogs.has_other_pages %}
+        <nav aria-label="Page navigation">
+            <ul class="pagination justify-content-center">
+                {% if dogs.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ dogs.previous_page_number }}" aria-label="Предыдущая">
+                            <span aria-hidden="true">&laquo;</span>
+                            <span class="sr-only">Предыдущая</span>
+                        </a>
+                    </li>
+                {% endif %}
+
+                {% for i in dogs.paginator.page_range %}
+                    {% if dogs.number == i %}
+                        <li class="page-item active">
+                            <span class="page-link">{{ i }}</span>
+                        </li>
+                    {% else %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ i }}">{{ i }}</a>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+
+                {% if dogs.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ dogs.next_page_number }}" aria-label="Следующая">
+                            <span aria-hidden="true">&raquo;</span>
+                            <span class="sr-only">Следующая</span>
+                        </a>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+
+    </div>
+{% endblock %}
+
