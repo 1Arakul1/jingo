@@ -69,31 +69,36 @@
     function removeFromProfile(dogId) {
       if (confirm('Вы уверены, что хотите удалить эту собаку из профиля?')) {
         fetch(`/dogs/${dogId}/remove_from_profile/`, {
-          method: 'DELETE',
+          method: 'POST', // Используем POST
           headers: {
             'X-CSRFToken': '{{ csrf_token }}',
-            'Content-Type': 'application/json'
-          }
+            'Content-Type': 'application/json' // Не обязательно, но рекомендуется
+          },
         })
         .then(response => {
           if (response.ok) {
-            // Успех: Удаляем карточку из DOM
-            const cardToRemove = document.getElementById(`dog-card-${dogId}`);
-            if (cardToRemove) {
-              cardToRemove.remove(); // Удаляем элемент из DOM
-            }
-            alert('Собака успешно удалена из профиля.');
+            return response.json();  // Распарсим JSON
           } else {
-            // Обработка ошибок
-            return response.json().then(data => {
-              alert('Ошибка: ' + (data.message || 'Неизвестная ошибка.'));
+            // Если ошибка
+            return response.json().then(data => { // Parse error response
+              throw new Error(data.message || 'Неизвестная ошибка'); // Throw error for .catch
             });
           }
         })
+        .then(data => {
+          // ВАЖНО: Этот код выполнится только при успешном выполнении запроса
+          console.log(data);
+          if (data && data.message) {
+              alert(data.message);
+          }
+          const cardToRemove = document.getElementById(`dog-card-${dogId}`);
+          if (cardToRemove) {
+            cardToRemove.remove();
+          }
+        })
         .catch(error => {
-          // Обработка ошибок сети или других проблем
-          console.error('Ошибка при удалении собаки:', error);
-          alert('Произошла ошибка при удалении собаки: ' + error.message);
+          console.error('Ошибка:', error);
+          alert(`Ошибка при удалении: ${error.message}`);  // Информируем пользователя об ошибке
         });
       }
     }

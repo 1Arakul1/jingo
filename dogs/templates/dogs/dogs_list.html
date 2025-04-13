@@ -7,13 +7,13 @@
 
     <div class="container">
         <div class="row">
-            {% for dog in dogs %}
+            {% for dog in page_obj %}  <!-- Изменили `dogs` на `page_obj` -->
                 <div class="col-md-4 mb-4">
                     <div class="card">
                         {% if dog.image %}
                             <img src="{{ dog.image.url }}" alt="{{ dog.name }}" class="card-img-top" style="max-height: 150px;">
                         {% else %}
-                            <img src="{% static 'images/default_dog.jpg' %}" alt="Default Dog" class="card-img-top" style="max-height: 150px;">
+                            <img src="{{ dog.image.url }}" alt="Default Dog" class="card-img-top" style="max-height: 150px;">
                         {% endif %}
                         <div class="card-body">
                             <h5 class="card-title mb-2">{{ dog.name }}</h5>
@@ -40,20 +40,20 @@
         </div>
 
         <!-- Пагинация -->
-        {% if dogs.has_other_pages %}
+        {% if page_obj.has_other_pages %} <!-- Изменили `dogs` на `page_obj` -->
         <nav aria-label="Page navigation">
             <ul class="pagination justify-content-center">
-                {% if dogs.has_previous %}
+                {% if page_obj.has_previous %} <!-- Изменили `dogs` на `page_obj` -->
                     <li class="page-item">
-                        <a class="page-link" href="?page={{ dogs.previous_page_number }}" aria-label="Предыдущая">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}" aria-label="Предыдущая"> <!-- Изменили `dogs` на `page_obj` -->
                             <span aria-hidden="true">&laquo;</span>
                             <span class="sr-only">Предыдущая</span>
                         </a>
                     </li>
                 {% endif %}
 
-                {% for i in dogs.paginator.page_range %}
-                    {% if dogs.number == i %}
+                {% for i in page_obj.paginator.page_range %} <!-- Изменили `dogs` на `page_obj` -->
+                    {% if page_obj.number == i %} <!-- Изменили `dogs` на `page_obj` -->
                         <li class="page-item active">
                             <span class="page-link">{{ i }}</span>
                         </li>
@@ -64,9 +64,9 @@
                     {% endif %}
                 {% endfor %}
 
-                {% if dogs.has_next %}
+                {% if page_obj.has_next %} <!-- Изменили `dogs` на `page_obj` -->
                     <li class="page-item">
-                        <a class="page-link" href="?page={{ dogs.next_page_number }}" aria-label="Следующая">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}" aria-label="Следующая"> <!-- Изменили `dogs` на `page_obj` -->
                             <span aria-hidden="true">&raquo;</span>
                             <span class="sr-only">Следующая</span>
                         </a>

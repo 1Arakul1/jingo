@@ -1,6 +1,8 @@
-# forms.py
 from django import forms
 from .models import Dog
+from datetime import date
+from django.core.exceptions import ValidationError
+from django.utils.translation import gettext_lazy as _
 
 class DogForm(forms.ModelForm):
     class Meta:
@@ -9,4 +11,3 @@ class DogForm(forms.ModelForm):
         widgets = {
             'birth_date': forms.DateInput(attrs={'type': 'date'}),  # Для удобного выбора даты
         }
-

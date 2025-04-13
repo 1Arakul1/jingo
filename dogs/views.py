@@ -1,16 +1,17 @@
-# dogs/views.py
 from django.shortcuts import render, redirect, get_object_or_404
 from .models import Breed, Dog
 from .forms import DogForm
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.urls import reverse, reverse_lazy  # Add reverse_lazy here, at the top
-from django.http import JsonResponse
+from django.http import JsonResponse, Http404
 from django.views import View
 from django.views.generic import TemplateView, ListView, CreateView, UpdateView, DeleteView, DetailView
 from django.contrib import messages
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger  # Импортируем пагинатор
+from django.core.exceptions import ValidationError
+from datetime import date
 
-
-class AddDogToProfileView(LoginRequiredMixin, View):
+class AddDogToProfileView(LoginRequiredMixin, View): # Остается без изменений
     def post(self, request, dog_id):
         dog = get_object_or_404(Dog, pk=dog_id)
 
@@ -24,7 +25,7 @@ class AddDogToProfileView(LoginRequiredMixin, View):
         return redirect(request.META.get('HTTP_REFERER', reverse('dogs:dogs_list')))
 
 
-class RemoveDogFromProfileView(LoginRequiredMixin, View):
+class RemoveDogFromProfileView(LoginRequiredMixin, View): # Остается без изменений
     def post(self, request, dog_id):  # Изменено на POST, т.к. DELETE напрямую из HTML не поддерживается
         dog = get_object_or_404(Dog, pk=dog_id, owner=request.user)
         dog.owner = None
@@ -32,12 +33,12 @@ class RemoveDogFromProfileView(LoginRequiredMixin, View):
         return JsonResponse({'message': 'Собака успешно удалена из профиля.'})
 
 
-class IndexView(LoginRequiredMixin, TemplateView):
+class IndexView(LoginRequiredMixin, TemplateView): # Остается без изменений
     template_name = 'dogs/index.html'
     extra_context = {'title': 'Главная страница'}
 
 
-class BreedsView(LoginRequiredMixin, TemplateView):
+class BreedsView(LoginRequiredMixin, TemplateView): # Остается без изменений
     template_name = 'dogs/breeds.html'
 
     def get_context_data(self, **kwargs):
@@ -46,18 +47,21 @@ class BreedsView(LoginRequiredMixin, TemplateView):
         breeds = Breed.objects.prefetch_related('dogs').all()
         breeds_data = []
         for breed in breeds:
-            dogs = breed.dogs.order_by('?')[:3]
+            dogs = breed.dogs.order_by('?')[:3]  # Получаем собак непосредственно из связанного набора
             breeds_data.append({'breed': breed, 'dogs': dogs})
         context['title'] = title
         context['breeds_data'] = breeds_data
         return context
 
 
-class DogsListView(LoginRequiredMixin, ListView):
+class DogsListView(LoginRequiredMixin, ListView): # Переделываем с пагинацией
     model = Dog
     template_name = 'dogs/dogs_list.html'
     context_object_name = 'dogs'  # Имя переменной в шаблоне
     paginate_by = 6
+
+    def get_queryset(self):
+        return Dog.objects.all()
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -65,13 +69,21 @@ class DogsListView(LoginRequiredMixin, ListView):
         return context
 
 
-class DogCreateView(LoginRequiredMixin, CreateView):
+class DogCreateView(LoginRequiredMixin, CreateView): # ОСТАВЛЯЕМ ТАК
     model = Dog
     form_class = DogForm
     template_name = 'dogs/dog_create.html'
     success_url = reverse_lazy('dogs:dogs_list')  # Добавлено для перенаправления
 
     def form_valid(self, form):
+        # Вызываем метод clean() модели перед сохранением
+        try:
+            form.instance.clean()
+        except ValidationError as e:
+            form.add_error('birth_date', e)  # Добавляем ошибку в поле birth_date
+            return self.form_invalid(form)
+
+        form.instance.owner = self.request.user
         messages.success(self.request, f"Собака '{form.instance.name}' успешно добавлена!")
         return super().form_valid(form)
 
@@ -83,7 +95,7 @@ class DogCreateView(LoginRequiredMixin, CreateView):
 
 from django.urls import reverse_lazy
 
-class DogUpdateView(LoginRequiredMixin, UpdateView):
+class DogUpdateView(LoginRequiredMixin, UpdateView): # Остается без изменений
     model = Dog
     form_class = DogForm
     template_name = 'dogs/dog_update.html'
@@ -107,7 +119,7 @@ class DogUpdateView(LoginRequiredMixin, UpdateView):
 
 from django.http import Http404
 
-class DogDeleteView(LoginRequiredMixin, DeleteView):
+class DogDeleteView(LoginRequiredMixin, DeleteView): # Остается без изменений
     model = Dog
     template_name = 'dogs/dog_confirm_delete.html'
     success_url = reverse_lazy('dogs:dogs_list')
@@ -124,7 +136,7 @@ class DogDeleteView(LoginRequiredMixin, DeleteView):
         return super().delete(request, *args, **kwargs)
 
 
-class DogReadView(LoginRequiredMixin, DetailView):
+class DogReadView(LoginRequiredMixin, DetailView): # Остается без изменений
     model = Dog
     template_name = 'dogs/dog_read.html'
     context_object_name = 'dog'
@@ -136,14 +148,18 @@ class DogReadView(LoginRequiredMixin, DetailView):
         return context
 
 
-class AllDogsView(LoginRequiredMixin, ListView):
+class AllDogsView(LoginRequiredMixin, ListView): # Переделываем с пагинацией
     model = Dog
     template_name = 'dogs/all_dogs.html'
     context_object_name = 'dogs'
     paginate_by = 6
 
+    def get_queryset(self):
+        return Dog.objects.all()
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['title'] = 'Все собаки'
         return context
+
 
